@@ -1,8 +1,10 @@
 package byow.Core;
 
+import byow.InputDemo.InputSource;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
+import edu.princeton.cs.algs4.StdDraw;
 import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
 import java.util.ArrayList;
@@ -16,8 +18,10 @@ import java.util.Random;
 public class Main {
     private static final int WIDTH = 50;
     private static final int HEIGHT = 50;
-    private static final long SEED = 2873127; //user input somehow
+    private static final long SEED = 3080248; //user input somehow
     private static final Random RANDOM = new Random(SEED);
+
+
     public static void main(String[] args) {
         if (args.length > 2) {
             System.out.println("Can only have two arguments - the flag and input string");
@@ -35,8 +39,20 @@ public class Main {
 
         TETile[][] world = new TETile[WIDTH][HEIGHT];
         drawWorld(world);
+        insertAvatar(world);
+
+        Avatar player1 = null;
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < HEIGHT; j++) {
+                if (world[i][j] == Tileset.AVATAR) {
+                    player1 = new Avatar(i, j);
+                }
+            }
+        }
 
         ter.renderFrame(world);
+
+        player1.moveAvatar(world, ter);
     }
 
     static class Room{
@@ -64,6 +80,20 @@ public class Main {
             this.endingP = endingP;
         }
     }
+
+    //add avatar to the board
+    public static void insertAvatar(TETile[][] tiles) {
+        boolean avatarCreated = false;
+        while (!avatarCreated) {
+            int randomX = RANDOM.nextInt(0, WIDTH);
+            int randomY = RANDOM.nextInt(0, HEIGHT);
+            TETile currentTile = tiles[randomX][randomY];
+            if (currentTile.equals(Tileset.FLOOR)) {
+                tiles[randomX][randomY] = Tileset.AVATAR;
+                avatarCreated = true;
+            }
+        }
+    }
     // draw row to the board at anchor
     public static void drawRow(TETile[][] tiles, Position p, TETile tile, int length){
         for(int dx = 0; dx < length; dx++) {
@@ -73,7 +103,7 @@ public class Main {
 
     public static boolean checkEmpty(TETile[][] tiles, Position p, int length, int width){
         //if(p.x - 1 < 0 || p.x + width + 1 >= 50 || p.y < 0 || p.y + length + 2 >= 50){
-            //return false;
+        //return false;
         //}
         Position positionP = p.shift(-1, 0);
         for (int i = 0; i < length + 1; i++){
@@ -184,6 +214,7 @@ public class Main {
         generateHallway(tiles, roomList, hallList);
         clearRooms(tiles, roomList);
         clearHalls(tiles, hallList);
+
     }
 
     public static Hallway connectRooms(TETile[][] tiles, Room first, Room second){
@@ -248,6 +279,58 @@ public class Main {
 
         public Position shift(int dx, int dy) {
             return new Position(this.x + dx, this.y + dy);
+        }
+    }
+
+    public interface InputSource {
+        public char getNextKey();
+        public boolean possibleNextInput();
+    }
+
+    public static void moveCharacter(TETile[][] tiles, Avatar avi, char input) {
+        int currX = avi.x;
+        int currY = avi.y;
+        if (input == 'w') {
+            avi.y = avi.y + 1;
+            //this.p =
+        }
+        if (input == 'a') {
+            avi.x = avi.x - 1;
+        }
+        if (input == 's') {
+            avi.y = avi.y - 1;
+        }
+        if (input == 'd') {
+            avi.x = avi.x + 1;
+        }
+        tiles[avi.x][avi.y] = Tileset.AVATAR;
+        tiles[currX][currY] = Tileset.FLOOR;
+    }
+
+    private static class Avatar {
+        int x;
+        int y;
+        Position p;
+        TETile design;
+
+        Avatar(int x, int y) {
+            this.design = Tileset.AVATAR;
+            this.x = x;
+            this.y = y;
+            this.p = new Position(this.x, this.y);
+        }
+
+        private void moveAvatar(TETile[][] tiles, TERenderer renderer) {
+            while (true) {
+                if (StdDraw.hasNextKeyTyped()) {
+                    char move = StdDraw.nextKeyTyped();
+                    if (move == 'q') {
+                        System.exit(0);
+                    }
+                    moveCharacter(tiles, this, move);
+                    renderer.renderFrame(tiles);
+                }
+            }
         }
     }
 
